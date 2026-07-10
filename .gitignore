@@ -1,0 +1,34 @@
+# Maxfiy ma'lumotlar
+.env
+
+# Ma'lumotlar bazasi
+*.db
+*.sqlite3
+bot_data.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtual muhit
+.venv/
+venv/
+env/
+ENV/
+
+# Loglar
+*.log
+
+# IDE / muharrir
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
