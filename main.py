@@ -6,7 +6,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 
 from config import TOKEN
 from commands import dp as command_dp
-from users import op as op_dp
+from users import dp as op_dp
 from database import init_db  
 BOTTOKEN = TOKEN
 storage = MemoryStorage()

@@ -3,12 +3,15 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import ReplyKeyboardRemove
 
 from states import ElonJoylash, SotibOlish
-from keyboards import category_menu, status_menu, Ha_Yoq_menu, user_main_menu, CATEGORIES, STATUSES
-from database import add_elon, get_elonlar_by_category, get_user_history
+from keyboards import (
+    category_menu, status_menu, Ha_Yoq_menu, user_main_menu,
+    CATEGORIES, STATUSES, confirmation_button
+)
+from database import add_elon, get_elonlar_by_category, get_user_history, set_elon_status, reject_elon
 from validators import validate_phone_number, validate_price
 from config import ADMINS
 
-op = Router()
+dp = Router()
 
 AD_DETAIL = (
     "📛 Mahsulot nomi: {name}\n"
@@ -21,18 +24,18 @@ AD_DETAIL = (
 SUCCESS_TEXT = "📍 E'lon joylashtirildi!\n\n" + AD_DETAIL
 
 
-@op.message(F.text == "➕E'lon joylash")
+@dp.message(F.text == "➕E'lon joylash")
 async def elon_joylash_start(message: types.Message, state: FSMContext):
     await message.answer("Mahsulot nomini yozing:")
     await state.set_state(ElonJoylash.name)
 
-@op.message(ElonJoylash.name)
+@dp.message(ElonJoylash.name)
 async def elon_j_name(message: types.Message, state: FSMContext):
     await state.update_data(name=message.text)
     await message.answer("Mahsulot qaysi bo'limga tegishli?", reply_markup=category_menu)
     await state.set_state(ElonJoylash.category)
 
-@op.message(ElonJoylash.category)
+@dp.message(ElonJoylash.category)
 async def elon_j_category(message: types.Message, state: FSMContext):
     if message.text not in CATEGORIES:
         await message.answer("⚠️ Iltimos, quyidagi tugmalardan birini tanlang:", reply_markup=category_menu)
@@ -41,7 +44,7 @@ async def elon_j_category(message: types.Message, state: FSMContext):
     await message.answer("Mahsulot narxini yozing:", reply_markup=ReplyKeyboardRemove())
     await state.set_state(ElonJoylash.price)
 
-@op.message(ElonJoylash.price)
+@dp.message(ElonJoylash.price)
 async def elon_j_price(message: types.Message, state: FSMContext):
     if not validate_price(message.text):
         await message.answer("⚠️ Narx faqat raqamlardan iborat bo'lishi kerak. Qaytadan kiriting:")
@@ -50,7 +53,7 @@ async def elon_j_price(message: types.Message, state: FSMContext):
     await message.answer("Mahsulot holatini tanlang:", reply_markup=status_menu)
     await state.set_state(ElonJoylash.status)
 
-@op.message(ElonJoylash.status)
+@dp.message(ElonJoylash.status)
 async def elon_j_status(message: types.Message, state: FSMContext):
     if message.text not in STATUSES:
         await message.answer("⚠️ Iltimos, quyidagi tugmalardan birini tanlang:", reply_markup=status_menu)
@@ -59,32 +62,32 @@ async def elon_j_status(message: types.Message, state: FSMContext):
     await message.answer("Mahsulot rasmini yuboring:", reply_markup=ReplyKeyboardRemove())
     await state.set_state(ElonJoylash.image)
 
-@op.message(ElonJoylash.image, F.photo)
+@dp.message(ElonJoylash.image, F.photo)
 async def elon_j_image(message: types.Message, state: FSMContext):
     await state.update_data(image=message.photo[-1].file_id)
     await message.answer("Mahsulot telefon raqamini yozing:")
     await state.set_state(ElonJoylash.phone)
 
-@op.message(ElonJoylash.image)
+@dp.message(ElonJoylash.image)
 async def elon_j_image_invalid(message: types.Message, state: FSMContext):
     await message.answer("⚠️ Iltimos, faqat rasm formatida fayl yuboring!")
 
-@op.message(ElonJoylash.phone)
+@dp.message(ElonJoylash.phone)
 async def elon_j_phone(message: types.Message, state: FSMContext):
     if not validate_phone_number(message.text):
         await message.answer("⚠️ Telefon raqami noto'g'ri. Masalan: +998901234567 yoki 901234567")
         return
     await state.update_data(phone=message.text)
-    await message.answer("E'lon joylashsinmi? (Ha/Yoq)", reply_markup=Ha_Yoq_menu)
+    await message.answer("E'lon joylashsinmi? (Ha/Yo'q)", reply_markup=Ha_Yoq_menu)
     await state.set_state(ElonJoylash.yes_or_no)
 
-@op.message(ElonJoylash.yes_or_no)
+@dp.message(ElonJoylash.yes_or_no)
 async def elon_j_yes_or_no(message: types.Message, state: FSMContext):
     data = await state.get_data()
 
     if message.text == "Ha":
         try:
-            add_elon(
+            ad_id = add_elon(
                 user_id=message.from_user.id,
                 name=data.get('name', 'Kiritilmagan'),
                 category=data.get('category', 'Kiritilmagan'),
@@ -114,7 +117,11 @@ async def elon_j_yes_or_no(message: types.Message, state: FSMContext):
             f"{ad_detail}"
         )
         try:
-            await message.bot.send_photo(chat_id=ADMINS, photo=data['image'], caption=admin_caption)
+            await message.bot.send_photo(
+                chat_id=ADMINS, photo=data['image'],
+                caption=admin_caption,
+                reply_markup=confirmation_button(ad_id)
+            )
         except Exception:
             # Adminga yuborishda xatolik bo'lsa ham foydalanuvchi jarayoni to'xtamasin
             pass
@@ -133,6 +140,48 @@ async def elon_j_yes_or_no(message: types.Message, state: FSMContext):
 
 
 
+@dp.callback_query(lambda c: c.data and c.data.startswith("review_accept:"))
+async def elon_tasdiqlash(call: types.CallbackQuery):
+    elon_id = int(call.data.split(":")[1])
+    user_id = set_elon_status(elon_id)
+
+    try:
+        await call.bot.send_message(
+            chat_id=user_id,
+            text="✅ E'loningiz tasdiqlandi va tez orada botda e'lon qilinadi!"
+        )
+    except Exception:
+        pass
+
+    try:
+        await call.message.edit_reply_markup(reply_markup=None)
+    except Exception:
+        pass
+
+    await call.answer("Siz e'lonni tasdiqladingiz!")
+
+
+@dp.callback_query(lambda c: c.data and c.data.startswith("review_reject:"))
+async def elon_bekor_qilish(call: types.CallbackQuery):
+    elon_id = int(call.data.split(":")[1])
+    user_id = reject_elon(elon_id)
+
+    if user_id:
+        try:
+            await call.bot.send_message(
+                chat_id=user_id,
+                text="❌ Afsuski, e'loningiz admin tomonidan rad etildi."
+            )
+        except Exception:
+            pass
+
+    # Takroriy bosishni oldini olish uchun tugmalarni olib tashlash
+    try:
+        await call.message.edit_reply_markup(reply_markup=None)
+    except Exception:
+        pass
+
+    await call.answer("Siz e'lonni rad etdingiz!")
 
 
 
@@ -141,13 +190,12 @@ async def elon_j_yes_or_no(message: types.Message, state: FSMContext):
 
 
 
-
-@op.message(F.text == "🎁Sotib olish")
+@dp.message(F.text == "🎁Sotib olish")
 async def sotib_olish(message: types.Message, state: FSMContext):
     await message.answer("🎁 Siz Sotib olish bo'limiga keldingiz. Marhamat, kategoriya tanlang:", reply_markup=category_menu)
     await state.set_state(SotibOlish.category)
 
-@op.message(SotibOlish.category)
+@dp.message(SotibOlish.category)
 async def sotib_olish_category(message: types.Message, state: FSMContext):
     chosen_category = message.text
 
@@ -170,7 +218,7 @@ async def sotib_olish_category(message: types.Message, state: FSMContext):
 
     await state.clear()
 
-@op.message(F.text == "📝Mening tarixim")
+@dp.message(F.text == "📝Mening tarixim")
 async def tarix_m(message: types.Message, state: FSMContext):
     user_ads = get_user_history(message.from_user.id)
 
@@ -188,6 +236,6 @@ async def tarix_m(message: types.Message, state: FSMContext):
         )
         await message.answer_photo(photo=ad['image'], caption=text)
 
-@op.message(F.text == "📞Biz bilan bog'lanish")
+@dp.message(F.text == "📞Biz bilan bog'lanish")
 async def biz_boglanish(message: types.Message):
     await message.answer("+998 20 003 722")

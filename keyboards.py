@@ -1,4 +1,13 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
+
+
+def confirmation_button(ad_id):
+    return InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(text="✅ Tasdiqlash", callback_data=f"review_accept:{ad_id}"),
+                InlineKeyboardButton(text="❌ Rad etish", callback_data=f"review_reject:{ad_id}")
+            ]
+        ])
 
 
 admin_main_menu = ReplyKeyboardMarkup(
@@ -80,12 +89,12 @@ status_menu = ReplyKeyboardMarkup(
 Ha_Yoq_menu = ReplyKeyboardMarkup(
     keyboard=[
         [
-            KeyboardButton(text="Ha", callback_data="ha"),
-            KeyboardButton(text="Yoq", callback_data="yoq")
+            KeyboardButton(text="Ha"),
+            KeyboardButton(text="Yo'q")
         ]
     ],
     resize_keyboard=True
-    )
+)
 
 
 # Menyulardagi tugmalar ro'yxati — kelgan xabarni tekshirish uchun.
