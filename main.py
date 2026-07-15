@@ -5,19 +5,21 @@ from aiogram import Bot, Dispatcher
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from config import TOKEN
-from commands import dp as command_dp
-from users import dp as op_dp
-from database import init_db  
-BOTTOKEN = TOKEN
+from commands import dp as command_router
+from users import dp as user_router
+from admin import admin_router
+from database import init_db
+
 storage = MemoryStorage()
 dp = Dispatcher(storage=storage)
 
 async def main():
     init_db()  
     
-    bot = Bot(token=BOTTOKEN)
-    dp.include_router(command_dp)
-    dp.include_router(op_dp)
+    bot = Bot(token=TOKEN)
+    dp.include_router(command_router)
+    dp.include_router(user_router)
+    dp.include_router(admin_router)
 
     await dp.start_polling(bot)
 

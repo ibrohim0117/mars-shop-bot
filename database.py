@@ -10,7 +10,8 @@ def init_db():
         CREATE TABLE IF NOT EXISTS users (
             user_id INTEGER PRIMARY KEY,
             full_name VARCHAR(100),
-            username VARCHAR(50)
+            username VARCHAR(50),
+            is_active INTEGER DEFAULT 1
         )
     """)
 
@@ -133,3 +134,7 @@ def reject_elon(elon_id):
         return row[0]
     finally:
         conn.close()
+
+
+# def change_user_status(user_id):
+#     pass

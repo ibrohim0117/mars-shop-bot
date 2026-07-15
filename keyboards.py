@@ -24,12 +24,7 @@ admin_main_menu = ReplyKeyboardMarkup(
             KeyboardButton(text="✅Foydalanuvchini bandan chiqarish")
         ],
         [
-            KeyboardButton(text="➕E'lon joylash"),
-            KeyboardButton(text="🎁Sotib olish")
-        ],
-        [
-            KeyboardButton(text="📝Mening tarixim"),
-            KeyboardButton(text="📞Biz bilan bog'lanish")
+            KeyboardButton(text="🥸Foydalanuvchi buttonlari ochish")
         ]
     ],
     resize_keyboard=True

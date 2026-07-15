@@ -7,7 +7,7 @@ from keyboards import (
     category_menu, status_menu, Ha_Yoq_menu, user_main_menu,
     CATEGORIES, STATUSES, confirmation_button
 )
-from database import add_elon, get_elonlar_by_category, get_user_history, set_elon_status, reject_elon
+from database import add_elon, get_elonlar_by_category, get_user_history
 from validators import validate_phone_number, validate_price
 from config import ADMINS
 
@@ -137,53 +137,6 @@ async def elon_j_yes_or_no(message: types.Message, state: FSMContext):
         await message.answer("E'lon bekor qilindi!", reply_markup=user_main_menu)
 
     await state.clear()
-
-
-
-@dp.callback_query(lambda c: c.data and c.data.startswith("review_accept:"))
-async def elon_tasdiqlash(call: types.CallbackQuery):
-    elon_id = int(call.data.split(":")[1])
-    user_id = set_elon_status(elon_id)
-
-    try:
-        await call.bot.send_message(
-            chat_id=user_id,
-            text="✅ E'loningiz tasdiqlandi va tez orada botda e'lon qilinadi!"
-        )
-    except Exception:
-        pass
-
-    try:
-        await call.message.edit_reply_markup(reply_markup=None)
-    except Exception:
-        pass
-
-    await call.answer("Siz e'lonni tasdiqladingiz!")
-
-
-@dp.callback_query(lambda c: c.data and c.data.startswith("review_reject:"))
-async def elon_bekor_qilish(call: types.CallbackQuery):
-    elon_id = int(call.data.split(":")[1])
-    user_id = reject_elon(elon_id)
-
-    if user_id:
-        try:
-            await call.bot.send_message(
-                chat_id=user_id,
-                text="❌ Afsuski, e'loningiz admin tomonidan rad etildi."
-            )
-        except Exception:
-            pass
-
-    # Takroriy bosishni oldini olish uchun tugmalarni olib tashlash
-    try:
-        await call.message.edit_reply_markup(reply_markup=None)
-    except Exception:
-        pass
-
-    await call.answer("Siz e'lonni rad etdingiz!")
-
-
 
 
 
