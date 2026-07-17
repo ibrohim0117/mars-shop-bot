@@ -3,7 +3,7 @@ from aiogram.filters import Command
 
 from config import ADMINS
 from keyboards import admin_main_menu, user_main_menu
-from database import add_user, count_users 
+from database import add_user, count_users
 
 dp = Router()
 
@@ -18,7 +18,6 @@ async def start(message: types.Message):
         await message.answer(f"Salom {message.from_user.full_name} xush kelibsiz Admin!", reply_markup=admin_main_menu)
     else:
         await message.answer(f"Salom {message.from_user.full_name} xush kelibsiz", reply_markup=user_main_menu)
-
 
 @dp.message(F.text == "👨‍💼Foydalanuvchilar soni")
 async def show_users_count(message: types.Message):

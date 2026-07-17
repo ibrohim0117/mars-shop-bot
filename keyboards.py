@@ -10,6 +10,13 @@ def confirmation_button(ad_id):
         ])
 
 
+def changeuserstatusbutton(status):
+    if status == 1:
+        return InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="❌Ban qilish", callback_data='ban❌')]])
+    else:
+        return InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="✅Bandan chiqarish", callback_data='unban✅')]])
+
+
 admin_main_menu = ReplyKeyboardMarkup(
     keyboard=[
         [
@@ -20,8 +27,7 @@ admin_main_menu = ReplyKeyboardMarkup(
             KeyboardButton(text="🔥Reklama xizmati")
         ],
         [
-            KeyboardButton(text="❌Foydalanuvchini ban qilish"),
-            KeyboardButton(text="✅Foydalanuvchini bandan chiqarish")
+            KeyboardButton(text="🔃Foydalanuvchini holatini o'zgartirish"),
         ],
         [
             KeyboardButton(text="🥸Foydalanuvchi buttonlari ochish")

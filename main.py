@@ -8,6 +8,7 @@ from config import TOKEN
 from commands import dp as command_router
 from users import dp as user_router
 from admin import admin_router
+from middlewares import BanMiddleware
 from database import init_db
 
 storage = MemoryStorage()
@@ -17,6 +18,11 @@ async def main():
     init_db()  
     
     bot = Bot(token=TOKEN)
+
+    # Ban qilingan foydalanuvchilarni barcha xabar va tugmalarda bloklash
+    dp.message.middleware(BanMiddleware())
+    dp.callback_query.middleware(BanMiddleware())
+
     dp.include_router(command_router)
     dp.include_router(user_router)
     dp.include_router(admin_router)

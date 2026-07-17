@@ -136,5 +136,22 @@ def reject_elon(elon_id):
         conn.close()
 
 
-# def change_user_status(user_id):
-#     pass
+def get_user_status(user_id):
+    conn = sqlite3.connect(DB_NAME)
+    try:
+        cursor = conn.cursor()
+        query = "SELECT full_name, is_active, username FROM users WHERE user_id=?"
+        return cursor.execute(query, (user_id,)).fetchone()
+    finally:
+        conn.close()
+
+
+def change_user_status(status, user_id):
+    conn = sqlite3.connect(DB_NAME)
+    try:
+        cursor = conn.cursor()
+        query = "UPDATE users SET is_active=? WHERE user_id=?"
+        cursor.execute(query, (status, user_id))
+        conn.commit()
+    finally:
+        conn.close()

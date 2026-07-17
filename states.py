@@ -1,5 +1,9 @@
 from aiogram.fsm.state import State, StatesGroup
 
+class ChangeUserStatus(StatesGroup):
+    user_id = State()
+    new_status = State()
+
 class ElonJoylash(StatesGroup):
     name = State()
     category = State()
