@@ -4,7 +4,6 @@
 # Ma'lumotlar bazasi
 *.db
 *.sqlite3
-bot_data.db
 
 # Python
 __pycache__/

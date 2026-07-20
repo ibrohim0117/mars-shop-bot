@@ -1,7 +1,7 @@
 from aiogram import BaseMiddleware
 from aiogram.types import Message, CallbackQuery
 
-from config import ADMINS
+from config import is_admin
 from database import get_user_status
 
 
@@ -12,7 +12,7 @@ class BanMiddleware(BaseMiddleware):
         user = data.get("event_from_user")
 
         # Foydalanuvchi aniqlanmasa yoki admin bo'lsa — o'tkazib yuboriladi
-        if user is None or str(user.id) == str(ADMINS):
+        if user is None or is_admin(user.id):
             return await handler(event, data)
 
         status = get_user_status(user.id)
