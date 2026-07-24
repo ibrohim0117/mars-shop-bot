@@ -1,5 +1,6 @@
 from aiogram import Router, types, F
 from aiogram.filters import Command
+from aiogram.fsm.context import FSMContext
 
 from config import is_admin
 from keyboards import admin_main_menu, user_main_menu
@@ -8,8 +9,16 @@ from database import add_user, count_users
 command_router = Router()
 
 
+def main_menu_for(user_id):
+    """Foydalanuvchi roliga mos asosiy menyu."""
+    return admin_main_menu if is_admin(user_id) else user_main_menu
+
+
 @command_router.message(Command('start'))
-async def start_handler(message: types.Message):
+async def start_handler(message: types.Message, state: FSMContext):
+    # Yarim qolgan jarayon bo'lsa tozalanadi (aks holda eski holat saqlanib qolardi)
+    await state.clear()
+
     try:
         add_user(message.from_user.id, message.from_user.full_name, message.from_user.username)
     except Exception:
@@ -20,6 +29,15 @@ async def start_handler(message: types.Message):
         await message.answer(f"Salom {message.from_user.full_name} xush kelibsiz Admin!", reply_markup=admin_main_menu)
     else:
         await message.answer(f"Salom {message.from_user.full_name} xush kelibsiz", reply_markup=user_main_menu)
+
+
+@command_router.message(Command('cancel'))
+async def cancel_handler(message: types.Message, state: FSMContext):
+    if await state.get_state() is None:
+        await message.answer("Bekor qilinadigan amal yo'q.", reply_markup=main_menu_for(message.from_user.id))
+        return
+    await state.clear()
+    await message.answer("❌ Amal bekor qilindi.", reply_markup=main_menu_for(message.from_user.id))
 
 
 @command_router.message(Command('help'))

@@ -1,17 +1,32 @@
 from aiogram import F, Router, types
 from aiogram.fsm.context import FSMContext
-from aiogram.types import ReplyKeyboardRemove
 
 from states import ElonJoylash, SotibOlish
 from keyboards import (
-    category_menu, category_menu_back, status_menu, Ha_Yoq_menu, user_main_menu,
-    CATEGORIES, STATUSES, BACK_TEXT, confirmation_button
+    category_menu, category_menu_back, status_menu, Ha_Yoq_menu,
+    user_main_menu, admin_main_menu, cancel_menu,
+    CATEGORIES, STATUSES, BACK_TEXT, CANCEL_TEXT, confirmation_button
 )
 from database import add_elon, get_elonlar_by_category, get_user_history
 from utils import validate_phone_number, validate_price
-from config import ADMINS
+from config import ADMINS, is_admin
 
 user_router = Router()
+
+
+def main_menu_for(user_id):
+    """Foydalanuvchi roliga mos asosiy menyu."""
+    return admin_main_menu if is_admin(user_id) else user_main_menu
+
+
+# ==================== BEKOR QILISH ====================
+# Har qanday FSM bosqichida "❌ Bekor qilish" tugmasini ushlaydi.
+# Boshqa state handlerlaridan OLDIN ro'yxatdan o'tgani uchun ustuvor.
+
+@user_router.message(F.text == CANCEL_TEXT)
+async def cancel_button_handler(message: types.Message, state: FSMContext):
+    await state.clear()
+    await message.answer("❌ Amal bekor qilindi.", reply_markup=main_menu_for(message.from_user.id))
 
 AD_DETAIL = (
     "📛 Mahsulot nomi: {name}\n"
@@ -28,7 +43,7 @@ SUCCESS_TEXT = "📍 E'lon joylashtirildi!\n\n" + AD_DETAIL
 
 @user_router.message(F.text == "➕E'lon joylash")
 async def elon_joylash_start_handler(message: types.Message, state: FSMContext):
-    await message.answer("Mahsulot nomini yozing:")
+    await message.answer("Mahsulot nomini yozing:", reply_markup=cancel_menu)
     await state.set_state(ElonJoylash.name)
 
 
@@ -45,7 +60,7 @@ async def elon_category_handler(message: types.Message, state: FSMContext):
         await message.answer("⚠️ Iltimos, quyidagi tugmalardan birini tanlang:", reply_markup=category_menu)
         return
     await state.update_data(category=message.text)
-    await message.answer("Mahsulot narxini yozing:", reply_markup=ReplyKeyboardRemove())
+    await message.answer("Mahsulot narxini yozing:", reply_markup=cancel_menu)
     await state.set_state(ElonJoylash.price)
 
 
@@ -65,14 +80,14 @@ async def elon_status_handler(message: types.Message, state: FSMContext):
         await message.answer("⚠️ Iltimos, quyidagi tugmalardan birini tanlang:", reply_markup=status_menu)
         return
     await state.update_data(status=message.text)
-    await message.answer("Mahsulot rasmini yuboring:", reply_markup=ReplyKeyboardRemove())
+    await message.answer("Mahsulot rasmini yuboring:", reply_markup=cancel_menu)
     await state.set_state(ElonJoylash.image)
 
 
 @user_router.message(ElonJoylash.image, F.photo)
 async def elon_image_handler(message: types.Message, state: FSMContext):
     await state.update_data(image=message.photo[-1].file_id)
-    await message.answer("Mahsulot telefon raqamini yozing:")
+    await message.answer("Mahsulot telefon raqamini yozing:", reply_markup=cancel_menu)
     await state.set_state(ElonJoylash.phone)
 
 

@@ -78,7 +78,7 @@ def get_elonlar_by_category(category):
         cursor = conn.cursor()
         cursor.execute("""
             SELECT name, category, price, status, image, phone FROM elonlar
-            WHERE LOWER(category) = LOWER(?) 
+            WHERE LOWER(category) = LOWER(?) AND is_active = 1
         """, (category.strip(),))
         rows = cursor.fetchall()
     finally:
@@ -118,6 +118,34 @@ def get_user_history(user_id):
             "status": row[3],
             "image": row[4],
             "phone": row[5]
+        })
+    return ads
+
+
+def get_pending_elonlar():
+    """Tasdiq kutayotgan (is_active=0) e'lonlar ro'yxatini qaytaradi."""
+    conn = sqlite3.connect(DB_NAME)
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT id, user_id, name, category, price, status, image, phone FROM elonlar
+            WHERE is_active = 0
+        """)
+        rows = cursor.fetchall()
+    finally:
+        conn.close()
+
+    ads = []
+    for row in rows:
+        ads.append({
+            "id": row[0],
+            "user_id": row[1],
+            "name": row[2],
+            "category": row[3],
+            "price": row[4],
+            "status": row[5],
+            "image": row[6],
+            "phone": row[7]
         })
     return ads
 

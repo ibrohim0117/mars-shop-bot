@@ -1,12 +1,48 @@
 from aiogram import Router, types, F
 from aiogram.fsm.context import FSMContext
 
-from database import set_elon_status, reject_elon, get_user_status, change_user_status
-from keyboards import user_main_menu, changeuserstatusbutton
+from database import (
+    set_elon_status, reject_elon, get_user_status, change_user_status, get_pending_elonlar
+)
+from keyboards import user_main_menu, changeuserstatusbutton, confirmation_button
 from states import ChangeUserStatus
 from config import is_admin
 
 admin_router = Router()
+
+
+# ==================== KUTILAYOTGAN E'LONLAR ====================
+
+@admin_router.message(F.text == "⏳ Kutilayotgan e'lonlar")
+async def pending_elonlar_handler(message: types.Message):
+    if not is_admin(message.from_user.id):
+        return
+
+    ads = get_pending_elonlar()
+    if not ads:
+        await message.answer("✅ Tasdiq kutayotgan e'lonlar yo'q.")
+        return
+
+    await message.answer(f"⏳ Tasdiq kutayotgan e'lonlar: {len(ads)} ta")
+    for ad in ads:
+        caption = (
+            "⏳ Kutilayotgan e'lon:\n"
+            f"👤 Foydalanuvchi ID: {ad['user_id']}\n\n"
+            f"📛 Mahsulot nomi: {ad['name']}\n"
+            f"🎞️ Bo'lim: {ad['category']}\n"
+            f"💎 Narxi: {ad['price']}\n"
+            f"📦 Holati: {ad['status']}\n"
+            f"📞 Telefon: {ad['phone']}"
+        )
+        try:
+            await message.answer_photo(
+                photo=ad['image'],
+                caption=caption,
+                reply_markup=confirmation_button(ad['id'])
+            )
+        except Exception:
+            # Rasm yuborilmasa (masalan file_id eskirgan) — matn ko'rinishida
+            await message.answer(caption, reply_markup=confirmation_button(ad['id']))
 
 
 # ==================== E'LONNI KO'RIB CHIQISH ====================
