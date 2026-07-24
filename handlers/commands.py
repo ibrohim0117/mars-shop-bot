@@ -4,7 +4,7 @@ from aiogram.fsm.context import FSMContext
 
 from config import is_admin
 from keyboards import admin_main_menu, user_main_menu
-from database import add_user, count_users
+from database import add_user, count_users, count_banned_users
 
 command_router = Router()
 
@@ -67,4 +67,10 @@ async def admin_menu_handler(message: types.Message):
 async def users_count_handler(message: types.Message):
     if is_admin(message.from_user.id):
         jami = count_users()
-        await message.answer(f"Botingizdagi jami foydalanuvchilar soni: {jami} ta")
+        banned = count_banned_users()
+        faol = jami - banned
+        await message.answer(
+            f"👥 Jami foydalanuvchilar: {jami} ta\n"
+            f"✅ Faol: {faol} ta\n"
+            f"🚫 Ban qilingan: {banned} ta"
+        )

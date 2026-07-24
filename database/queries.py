@@ -58,6 +58,17 @@ def count_users():
         conn.close()
 
 
+def count_banned_users():
+    """Ban qilingan (is_active=0) foydalanuvchilar soni."""
+    conn = sqlite3.connect(DB_NAME)
+    try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT COUNT(*) FROM users WHERE is_active = 0")
+        return cursor.fetchone()[0]
+    finally:
+        conn.close()
+
+
 def add_elon(user_id, name, category, price, status, image, phone):
     conn = sqlite3.connect(DB_NAME)
     try:
@@ -102,7 +113,7 @@ def get_user_history(user_id):
     try:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT name, category, price, status, image, phone FROM elonlar
+            SELECT name, category, price, status, image, phone, is_active FROM elonlar
             WHERE user_id = ?
         """, (user_id,))
         rows = cursor.fetchall()
@@ -117,7 +128,8 @@ def get_user_history(user_id):
             "price": row[2],
             "status": row[3],
             "image": row[4],
-            "phone": row[5]
+            "phone": row[5],
+            "is_active": row[6]
         })
     return ads
 
@@ -148,6 +160,17 @@ def get_pending_elonlar():
             "phone": row[7]
         })
     return ads
+
+
+def get_elon_status(elon_id):
+    """E'lonning is_active holatini qaytaradi (0 yoki 1), topilmasa None."""
+    conn = sqlite3.connect(DB_NAME)
+    try:
+        cursor = conn.cursor()
+        row = cursor.execute("SELECT is_active FROM elonlar WHERE id = ?", (elon_id,)).fetchone()
+        return row[0] if row else None
+    finally:
+        conn.close()
 
 
 def set_elon_status(elon_id):

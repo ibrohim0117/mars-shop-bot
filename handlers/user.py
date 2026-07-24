@@ -8,7 +8,7 @@ from keyboards import (
     CATEGORIES, STATUSES, BACK_TEXT, CANCEL_TEXT, confirmation_button
 )
 from database import add_elon, get_elonlar_by_category, get_user_history
-from utils import validate_phone_number, validate_price
+from utils import validate_phone_number, validate_price, normalize_phone
 from config import ADMINS, is_admin
 
 user_router = Router()
@@ -36,7 +36,16 @@ AD_DETAIL = (
     "📞 Telefon: {phone}"
 )
 
-SUCCESS_TEXT = "📍 E'lon joylashtirildi!\n\n" + AD_DETAIL
+
+def format_ad(ad):
+    """E'lon lug'atidan AD_DETAIL matnini hosil qiladi."""
+    return AD_DETAIL.format(
+        name=ad.get('name', '-'),
+        category=ad.get('category', '-'),
+        price=ad.get('price', '-'),
+        status=ad.get('status', '-'),
+        phone=ad.get('phone', '-')
+    )
 
 
 # ==================== E'LON JOYLASH ====================
@@ -92,7 +101,7 @@ async def elon_image_handler(message: types.Message, state: FSMContext):
 
 
 @user_router.message(ElonJoylash.image)
-async def elon_image_invalid_handler(message: types.Message, state: FSMContext):
+async def elon_image_invalid_handler(message: types.Message):
     await message.answer("⚠️ Iltimos, faqat rasm formatida fayl yuboring!")
 
 
@@ -101,7 +110,8 @@ async def elon_phone_handler(message: types.Message, state: FSMContext):
     if not validate_phone_number(message.text):
         await message.answer("⚠️ Telefon raqami noto'g'ri. Masalan: +998901234567 yoki 901234567")
         return
-    await state.update_data(phone=message.text)
+    # Bazaga yagona formatda saqlash uchun normalizatsiya (901234567)
+    await state.update_data(phone=normalize_phone(message.text))
     await message.answer("E'lon joylashsinmi? (Ha/Yo'q)", reply_markup=Ha_Yoq_menu)
     await state.set_state(ElonJoylash.yes_or_no)
 
@@ -111,6 +121,16 @@ async def elon_confirm_handler(message: types.Message, state: FSMContext):
     data = await state.get_data()
 
     if message.text == "Ha":
+        # Holat buzilgan bo'lsa (masalan bot qayta ishga tushib, ma'lumot yo'qolsa)
+        image = data.get('image')
+        if not image:
+            await message.answer(
+                "❌ E'lon ma'lumotlari topilmadi. Iltimos, boshidan boshlang.",
+                reply_markup=user_main_menu
+            )
+            await state.clear()
+            return
+
         try:
             ad_id = add_elon(
                 user_id=message.from_user.id,
@@ -144,7 +164,7 @@ async def elon_confirm_handler(message: types.Message, state: FSMContext):
         for admin_id in ADMINS:
             try:
                 await message.bot.send_photo(
-                    chat_id=admin_id, photo=data['image'],
+                    chat_id=admin_id, photo=image,
                     caption=admin_caption,
                     reply_markup=confirmation_button(ad_id)
                 )
@@ -158,7 +178,7 @@ async def elon_confirm_handler(message: types.Message, state: FSMContext):
             "Tez orada botda e'lon qilinadi.\n\n"
             f"{ad_detail}"
         )
-        await message.answer_photo(photo=data.get('image'), caption=user_caption, reply_markup=user_main_menu)
+        await message.answer_photo(photo=image, caption=user_caption, reply_markup=user_main_menu)
     else:
         await message.answer("E'lon bekor qilindi!", reply_markup=user_main_menu)
 
@@ -198,14 +218,8 @@ async def sotib_olish_category_handler(message: types.Message, state: FSMContext
         return
 
     for ad in ads_found:
-        text = SUCCESS_TEXT.format(
-            name=ad.get('name', '-'),
-            category=ad.get('category', '-'),
-            price=ad.get('price', '-'),
-            status=ad.get('status', '-'),
-            phone=ad.get('phone', '-')
-        )
-        await message.answer_photo(photo=ad['image'], caption=text)
+        caption = "🛒 Sotuvdagi mahsulot:\n\n" + format_ad(ad)
+        await message.answer_photo(photo=ad['image'], caption=caption)
 
     await message.answer("🏠 Asosiy menyu:", reply_markup=user_main_menu)
     await state.clear()
@@ -222,14 +236,9 @@ async def mening_tarixim_handler(message: types.Message):
         return
 
     for ad in user_ads:
-        text = SUCCESS_TEXT.format(
-            name=ad.get('name', '-'),
-            category=ad.get('category', '-'),
-            price=ad.get('price', '-'),
-            status=ad.get('status', '-'),
-            phone=ad.get('phone', '-')
-        )
-        await message.answer_photo(photo=ad['image'], caption=text)
+        holat = "✅ Tasdiqlangan" if ad.get('is_active') == 1 else "⏳ Ko'rib chiqilmoqda"
+        caption = f"{holat}\n\n" + format_ad(ad)
+        await message.answer_photo(photo=ad['image'], caption=caption)
 
 
 @user_router.message(F.text == "📞Biz bilan bog'lanish")

@@ -10,6 +10,17 @@ def validate_phone_number(phone_number):
         return False
 
 
+def normalize_phone(phone_number):
+    """Telefon raqamini bazaga yagona formatda saqlash uchun keltiradi: 901234567 (9 xonali).
+
+    Masalan: '+998901234567' yoki '998901234567' -> '901234567'
+    """
+    digits = re.sub(r"\D", "", phone_number)  # faqat raqamlarni qoldiradi
+    if len(digits) == 12 and digits.startswith("998"):
+        return digits[3:]
+    return digits
+
+
 def validate_price(price):
     """Narx faqat raqamlardan iborat bo'lishi kerak (bo'sh joylarga ruxsat beriladi)."""
     if not price:

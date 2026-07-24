@@ -2,7 +2,8 @@ from aiogram import Router, types, F
 from aiogram.fsm.context import FSMContext
 
 from database import (
-    set_elon_status, reject_elon, get_user_status, change_user_status, get_pending_elonlar
+    set_elon_status, reject_elon, get_user_status, change_user_status,
+    get_pending_elonlar, get_elon_status
 )
 from keyboards import user_main_menu, changeuserstatusbutton, confirmation_button
 from states import ChangeUserStatus
@@ -47,11 +48,30 @@ async def pending_elonlar_handler(message: types.Message):
 
 # ==================== E'LONNI KO'RIB CHIQISH ====================
 
+async def _remove_buttons(call: types.CallbackQuery):
+    """Xabardagi inline tugmalarni olib tashlaydi (takroriy bosishga qarshi)."""
+    try:
+        await call.message.edit_reply_markup(reply_markup=None)
+    except Exception:
+        pass
+
+
 @admin_router.callback_query(lambda c: c.data and c.data.startswith("review_accept:"))
 async def elon_tasdiqlash_handler(call: types.CallbackQuery):
     elon_id = int(call.data.split(":")[1])
-    user_id = set_elon_status(elon_id)
 
+    status = get_elon_status(elon_id)
+    # Boshqa admin allaqachon ko'rib chiqqan bo'lishi mumkin
+    if status is None:
+        await _remove_buttons(call)
+        await call.answer("Bu e'lon allaqachon rad etilgan yoki o'chirilgan.", show_alert=True)
+        return
+    if status == 1:
+        await _remove_buttons(call)
+        await call.answer("Bu e'lon allaqachon tasdiqlangan.", show_alert=True)
+        return
+
+    user_id = set_elon_status(elon_id)
     if user_id:
         try:
             await call.bot.send_message(
@@ -61,20 +81,21 @@ async def elon_tasdiqlash_handler(call: types.CallbackQuery):
         except Exception:
             pass
 
-    # Takroriy bosishning oldini olish uchun tugmalarni olib tashlash
-    try:
-        await call.message.edit_reply_markup(reply_markup=None)
-    except Exception:
-        pass
-
+    await _remove_buttons(call)
     await call.answer("Siz e'lonni tasdiqladingiz!")
 
 
 @admin_router.callback_query(lambda c: c.data and c.data.startswith("review_reject:"))
 async def elon_rad_etish_handler(call: types.CallbackQuery):
     elon_id = int(call.data.split(":")[1])
-    user_id = reject_elon(elon_id)
 
+    # Boshqa admin allaqachon rad etib, o'chirib yuborgan bo'lishi mumkin
+    if get_elon_status(elon_id) is None:
+        await _remove_buttons(call)
+        await call.answer("Bu e'lon allaqachon ko'rib chiqilgan.", show_alert=True)
+        return
+
+    user_id = reject_elon(elon_id)
     if user_id:
         try:
             await call.bot.send_message(
@@ -84,12 +105,7 @@ async def elon_rad_etish_handler(call: types.CallbackQuery):
         except Exception:
             pass
 
-    # Takroriy bosishning oldini olish uchun tugmalarni olib tashlash
-    try:
-        await call.message.edit_reply_markup(reply_markup=None)
-    except Exception:
-        pass
-
+    await _remove_buttons(call)
     await call.answer("Siz e'lonni rad etdingiz!")
 
 
