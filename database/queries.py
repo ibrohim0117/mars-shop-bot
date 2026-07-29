@@ -69,6 +69,23 @@ def count_banned_users():
         conn.close()
 
 
+def get_all_user_ids(active_only=True):
+    """Foydalanuvchi ID lari ro'yxati (reklama tarqatish uchun).
+
+    active_only=True bo'lsa faqat ban qilinmagan foydalanuvchilar qaytariladi.
+    """
+    conn = sqlite3.connect(DB_NAME)
+    try:
+        cursor = conn.cursor()
+        if active_only:
+            cursor.execute("SELECT user_id FROM users WHERE is_active = 1")
+        else:
+            cursor.execute("SELECT user_id FROM users")
+        return [row[0] for row in cursor.fetchall()]
+    finally:
+        conn.close()
+
+
 def add_elon(user_id, name, category, price, status, image, phone):
     conn = sqlite3.connect(DB_NAME)
     try:
@@ -83,14 +100,35 @@ def add_elon(user_id, name, category, price, status, image, phone):
         conn.close()
 
 
-def get_elonlar_by_category(category):
+def count_elonlar_by_category(category):
+    """Kategoriyadagi tasdiqlangan (is_active=1) e'lonlar soni."""
     conn = sqlite3.connect(DB_NAME)
     try:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT name, category, price, status, image, phone FROM elonlar
+            SELECT COUNT(*) FROM elonlar
             WHERE LOWER(category) = LOWER(?) AND is_active = 1
         """, (category.strip(),))
+        return cursor.fetchone()[0]
+    finally:
+        conn.close()
+
+
+def get_elonlar_by_category(category, limit=None, offset=0):
+    """Kategoriyadagi tasdiqlangan e'lonlar (yangi->eski). limit berilsa sahifalab qaytaradi."""
+    conn = sqlite3.connect(DB_NAME)
+    try:
+        cursor = conn.cursor()
+        query = """
+            SELECT name, category, price, status, image, phone FROM elonlar
+            WHERE LOWER(category) = LOWER(?) AND is_active = 1
+            ORDER BY id DESC
+        """
+        params = [category.strip()]
+        if limit is not None:
+            query += " LIMIT ? OFFSET ?"
+            params += [limit, offset]
+        cursor.execute(query, params)
         rows = cursor.fetchall()
     finally:
         conn.close()

@@ -2,12 +2,10 @@ import re
 
 
 def validate_phone_number(phone_number):
-    pattern = r"^\+998\d{9}$|^\d{9}$"
-    match = re.match(pattern, phone_number)
-    if match:
-        return True
-    else:
+    if not phone_number:
         return False
+    pattern = r"^\+998\d{9}$|^\d{9}$"
+    return bool(re.match(pattern, phone_number))
 
 
 def normalize_phone(phone_number):
@@ -15,6 +13,8 @@ def normalize_phone(phone_number):
 
     Masalan: '+998901234567' yoki '998901234567' -> '901234567'
     """
+    if not phone_number:
+        return ""
     digits = re.sub(r"\D", "", phone_number)  # faqat raqamlarni qoldiradi
     if len(digits) == 12 and digits.startswith("998"):
         return digits[3:]

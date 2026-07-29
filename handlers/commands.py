@@ -1,17 +1,13 @@
 from aiogram import Router, types, F
-from aiogram.filters import Command
+from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 
 from config import is_admin
 from keyboards import admin_main_menu, user_main_menu
 from database import add_user, count_users, count_banned_users
+from utils import main_menu_for
 
 command_router = Router()
-
-
-def main_menu_for(user_id):
-    """Foydalanuvchi roliga mos asosiy menyu."""
-    return admin_main_menu if is_admin(user_id) else user_main_menu
 
 
 @command_router.message(Command('start'))
@@ -63,7 +59,7 @@ async def admin_menu_handler(message: types.Message):
         await message.answer("Sizda bunga huquq yo'q!🤌🏻")
 
 
-@command_router.message(F.text == "👨‍💼Foydalanuvchilar soni")
+@command_router.message(F.text == "👨‍💼Foydalanuvchilar soni", StateFilter(None))
 async def users_count_handler(message: types.Message):
     if is_admin(message.from_user.id):
         jami = count_users()

@@ -11,6 +11,13 @@ def confirmation_button(ad_id):
     ])
 
 
+def next_page_button():
+    """Sotib olishda keyingi sahifani ko'rsatish tugmasi."""
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Keyingi ➡️", callback_data="buy_next")]
+    ])
+
+
 def changeuserstatusbutton(status):
     """Foydalanuvchi holatiga qarab ban yoki unban tugmasini qaytaradi."""
     if status == 1:

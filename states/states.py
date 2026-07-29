@@ -18,3 +18,11 @@ class ElonJoylash(StatesGroup):
 
 class SotibOlish(StatesGroup):
     category = State()
+
+
+class Reklama(StatesGroup):
+    turi = State()      # reklama turini tanlash (matn / rasm / video)
+    matn = State()      # matn kutilmoqda
+    rasm = State()      # rasm kutilmoqda
+    video = State()     # video kutilmoqda
+    tasdiq = State()    # yuborishni tasdiqlash

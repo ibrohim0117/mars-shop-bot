@@ -122,6 +122,22 @@ cancel_menu = ReplyKeyboardMarkup(
 )
 
 
+# Reklama xizmati (admin) — tur tanlash tugmalari.
+REKLAMA_MATN = "📝 Matnli reklama"
+REKLAMA_RASM = "🖼 Rasmli reklama"
+REKLAMA_VIDEO = "🎬 Videoli reklama"
+
+reklama_menu = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text=REKLAMA_MATN)],
+        [KeyboardButton(text=REKLAMA_RASM)],
+        [KeyboardButton(text=REKLAMA_VIDEO)],
+        [KeyboardButton(text=CANCEL_TEXT)],
+    ],
+    resize_keyboard=True
+)
+
+
 # Menyulardagi tugmalar ro'yxati — kelgan xabarni tekshirish uchun.
 # Menyularning o'zidan hosil qilinadi, shuning uchun doim mos bo'ladi.
 # CANCEL_TEXT bu ro'yxatlarga kirmaydi — bekor qilish alohida handlerda ushlanadi.
